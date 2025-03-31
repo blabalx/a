@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ubicación en Tiempo Real</title>
+    <!-- Agregar el CSS de Mapbox -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { width: 100%; height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <!-- Agregar las librerías de Mapbox y Firebase -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+    <script type="module">
+        // Importar las funciones necesarias de Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js"; 
+
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-l_OxPhJi52jdBImRwv7wXwpQYV-M1Qc",
+            authDomain: "conexionb-8d854.firebaseapp.com",
+            databaseURL: "https://conexionb-8d854-default-rtdb.firebaseio.com",
+            projectId: "conexionb-8d854",
+            storageBucket: "conexionb-8d854.firebasestorage.app",
+            messagingSenderId: "95295531895",
+            appId: "1:95295531895:web:42f4c088e31ca184074f72"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app); // Inicializar Firestore
+
+        // Configuración de Mapbox
+        mapboxgl.accessToken = 'pk.eyJ1Ijoic2FudGlhZ290biIsImEiOiJjbThweGJncG8wODBsMmtweWJsYWd2dWE4In0.Su3X0H22QKVJwCEOCwH64Q';
+
+        // Crear el mapa de Mapbox
+        const map = new mapboxgl.Map({
+            container: 'map', // ID del div del mapa
+            style: 'mapbox://styles/mapbox/streets-v11', // Estilo del mapa
+            center: [0, 0], // Coordenadas iniciales (lat, long)
+            zoom: 12
+        });
+
+        // Crear un marcador
+        const marker = new mapboxgl.Marker()
+            .setLngLat([0, 0]) // Latitud y Longitud inicial
+            .addTo(map);
+
+        // Obtener la ubicación en tiempo real desde Firestore
+        const ubicacionRef = doc(db, "ubica", "UserUbi"); // Referencia al documento en Firestore
+        getDoc(ubicacionRef).then((docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                console.log("Datos recibidos:", data);
+                console.log(data.latitud);
+                console.log(data.longitud);
+
+                if (data && data.latitud !== undefined && data.longitud !== undefined) {
+                    const { latitud, longitud } = data;
+                    console.log("Latitud y Longitud recibidas:", latitud, longitud);
+
+                    // Verificar que las coordenadas sean válidas
+                    if (latitud && longitud) {
+                        // Asegurarse de que las coordenadas estén dentro de los límites válidos
+                        if (latitud >= -90 && latitud <= 90 && longitud >= -180 && longitud <= 180) {
+                            // Actualizar el marcador y el centro del mapa con las nuevas coordenadas
+                            marker.setLngLat([longitud, latitud]);
+                            map.setCenter([longitud, latitud]);
+                        } else {
+                            console.log("Las coordenadas no están dentro de los límites válidos.");
+                        }
+                    } else {
+                        console.log("Las coordenadas son inválidas en Firestore.");
+                    }
+                } else {
+                    console.log("No se recibieron datos válidos de Firestore.");
+                }
+            } else {
+                console.log("No se encontró el documento en Firestore.");
+            }
+        }).catch((error) => {
+            console.log("Error al obtener los datos:", error);
+        });
+    </script>
+</body>
+</html>
