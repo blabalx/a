@@ -13,14 +13,14 @@
 </head>
 <body>
     <div id="map"></div>
-
+ 
     <!-- Agregar las librerías de Mapbox y Firebase -->
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
     <script type="module">
         // Importar las funciones necesarias de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js"; 
-
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+ 
         // Configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyC-l_OxPhJi52jdBImRwv7wXwpQYV-M1Qc",
@@ -31,14 +31,14 @@
             messagingSenderId: "95295531895",
             appId: "1:95295531895:web:42f4c088e31ca184074f72"
         };
-
+ 
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app); // Inicializar Firestore
-
+ 
         // Configuración de Mapbox
         mapboxgl.accessToken = 'pk.eyJ1Ijoic2FudGlhZ290biIsImEiOiJjbThweGJncG8wODBsMmtweWJsYWd2dWE4In0.Su3X0H22QKVJwCEOCwH64Q';
-
+ 
         // Crear el mapa de Mapbox
         const map = new mapboxgl.Map({
             container: 'map', // ID del div del mapa
@@ -46,28 +46,25 @@
             center: [0, 0], // Coordenadas iniciales (lat, long)
             zoom: 12
         });
-
+ 
         // Crear un marcador
         const marker = new mapboxgl.Marker()
             .setLngLat([0, 0]) // Latitud y Longitud inicial
             .addTo(map);
-
-        // Obtener la ubicación en tiempo real desde Firestore
-        const ubicacionRef = doc(db, "ubica", "UserUbi"); // Referencia al documento en Firestore
-        getDoc(ubicacionRef).then((docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                console.log("Datos recibidos:", data);
-                console.log(data.latitud);
-                console.log(data.longitud);
-
-                if (data && data.latitud !== undefined && data.longitud !== undefined) {
-                    const { latitud, longitud } = data;
-                    console.log("Latitud y Longitud recibidas:", latitud, longitud);
-
-                    // Verificar que las coordenadas sean válidas
-                    if (latitud && longitud) {
-                        // Asegurarse de que las coordenadas estén dentro de los límites válidos
+ 
+        // Función para obtener y actualizar la ubicación en tiempo real
+        async function actualizarUbicacion() {
+            try {
+                const ubicacionRef = doc(db, "ubica", "UserUbi"); // Referencia al documento en Firestore
+                const docSnap = await getDoc(ubicacionRef);
+ 
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+ 
+                    if (data && data.latitud !== undefined && data.longitud !== undefined) {
+                        const { latitud, longitud } = data;
+ 
+                        // Verificar que las coordenadas sean válidas
                         if (latitud >= -90 && latitud <= 90 && longitud >= -180 && longitud <= 180) {
                             // Actualizar el marcador y el centro del mapa con las nuevas coordenadas
                             marker.setLngLat([longitud, latitud]);
@@ -79,14 +76,13 @@
                         console.log("Las coordenadas son inválidas en Firestore.");
                     }
                 } else {
-                    console.log("No se recibieron datos válidos de Firestore.");
+                    console.log("No se encontró el documento en Firestore.");
                 }
-            } else {
-                console.log("No se encontró el documento en Firestore.");
+            } catch (error) {
+                console.log("Error al obtener los datos:", error);
             }
-        }).catch((error) => {
-            console.log("Error al obtener los datos:", error);
-        });
+        }
+        setInterval(actualizarUbicacion, 1000);
     </script>
 </body>
 </html>
